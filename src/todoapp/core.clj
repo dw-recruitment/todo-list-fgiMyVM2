@@ -7,7 +7,8 @@
   (:gen-class))
 
 (defroutes handler
-           (GET "/" [] (slurp (io/resource "index.html"))))
+           (GET "/" [] (slurp (io/resource "index.html")))
+           (GET "/about" [] (slurp (io/resource "about.html"))))
 
 (def app
   (-> handler
