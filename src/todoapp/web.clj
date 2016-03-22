@@ -1,4 +1,4 @@
-(ns todoapp.core
+(ns todoapp.web
   (:require [clojure.java.io :as io]
             [compojure.core :refer [defroutes GET]]
             [ring.adapter.jetty :refer [run-jetty]]

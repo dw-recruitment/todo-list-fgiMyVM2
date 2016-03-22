@@ -1,0 +1,30 @@
+[
+ {:db/id #db/id[:db.part/db]
+  :db/ident :item/text
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "The text content of a TODO item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :item/status
+  :db/valueType :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/doc "The status of a TODO item, as in :todo or :done"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :item/index
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/doc "The 0-based index for where a TODO item is ordered"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/user]
+  :db/ident :item.status/todo
+  :db/doc "Value of :item/status attribute indicating a TODO is not yet done"}
+
+ {:db/id #db/id[:db.part/user]
+  :db/ident :item.status/done
+  :db/doc "Value of :item/status attribute indicating a TODO is done"}
+ ]

@@ -4,7 +4,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [compojure "1.5.0"]
+                 [com.datomic/datomic-free "0.9.5350"]
                  [ring "1.4.0"]]
-  :main ^:skip-aot todoapp.core
+  :main ^:skip-aot todoapp.web
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
