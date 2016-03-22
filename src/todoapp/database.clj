@@ -7,6 +7,7 @@
 (def functions-tx
   [
    {:db/ident :add-item
+    :db/doc   "Create a new todo item at the end of the list with the provided text and a status of :item.status/todo."
     :db/id    (d/tempid :db.part/user)
     :db/fn    (d/function
                 {:lang     :clojure
@@ -41,6 +42,27 @@
   [conn {:keys [text]}]
   (d/transact conn [[:add-item text]]))
 
+(def status-kw->enum
+  {:todo :item.status/todo
+   :done :item.status/done})
+
+(def status-enum->kw
+  {:item.status/todo :todo
+   :item.status/done :done})
+
+(defn set-item-status
+  "Update item with entity id e to have a status of either :todo or :done"
+  [conn e status]
+  (if-let [status-enum (status-kw->enum status)]
+    (d/transact conn [{:db/id       e
+                       :item/status status-enum}])
+    (throw (ex-info "Status must be either :todo or :done" {:status status}))))
+
+(defn status
+  "Get status of entity e"
+  [e]
+  (status-enum->kw (:item/status e)))
+
 (comment
   (d/delete-database uri)
   (init uri)
@@ -56,4 +78,8 @@
        :where
        [?e :item/index ?i]
        [?e :item/text ?text]] (db conn) "new item")
+  (set-item-status conn 17592186045425 :done)
+  (let [{:keys [tempids db-after]} @(add-item conn {:text "something2"})
+        eid (val (first tempids))]
+    (:item/status (d/entity db-after eid)))
   )
