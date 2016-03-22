@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [datomic.api :as d :refer [q db]]))
 
-(def uri "datomic:mem://todos")
+(def uri "datomic:free://localhost:4334/todos")
 
 (def functions-tx
   [

@@ -1,6 +1,10 @@
 /target
 /classes
 /checkouts
+/transactor/datomic*
+/transactor/data
+/transactor/log
+/transactor/transactor.pid
 pom.xml
 pom.xml.asc
 *.jar
