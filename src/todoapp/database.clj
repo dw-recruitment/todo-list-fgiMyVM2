@@ -26,6 +26,7 @@
    ])
 
 (defn init
+  "Creates a new datomic database at uri and installs schema and database functions."
   [uri]
   (d/create-database uri)
   (let [conn (d/connect uri)
@@ -34,19 +35,23 @@
     @(d/transact conn functions-tx)))
 
 (defn transact-dummy-data
+  "Insert some example TODOs into the database"
   [conn]
   (let [data-tx (read-string (slurp (io/resource "db/data.edn")))]
     (d/transact conn data-tx)))
 
 (defn add-item
+  "Adds a new TODO item with status :todo at the end of the list."
   [conn {:keys [text]}]
   (d/transact conn [[:add-item text]]))
 
 (def status-kw->enum
+  "Helper for going from :todo :done keywords to the keywords used to enumerate statuses in the db"
   {:todo :item.status/todo
    :done :item.status/done})
 
 (def status-enum->kw
+  "Helper for going from keywords enumerating database states to :todo and :done"
   {:item.status/todo :todo
    :item.status/done :done})
 
@@ -66,20 +71,8 @@
 (comment
   (d/delete-database uri)
   (init uri)
-  *data-readers*
   (def conn (d/connect uri))
   @(transact-dummy-data conn)
-  (q '[:find (pull ?e [*]) :where [?e :db/ident]] (db conn))
   (q '[:find (pull ?e [*]) :where [?e :item/status]] (db conn))
-  (q '[:find (max ?i) :where [?e :item/index ?i]] (db conn))
   @(add-item conn {:text "new item"})
-  (q '[:find ?i
-       :in $ ?text
-       :where
-       [?e :item/index ?i]
-       [?e :item/text ?text]] (db conn) "new item")
-  (set-item-status conn 17592186045425 :done)
-  (let [{:keys [tempids db-after]} @(add-item conn {:text "something2"})
-        eid (val (first tempids))]
-    (:item/status (d/entity db-after eid)))
   )
