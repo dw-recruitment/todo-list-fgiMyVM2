@@ -1,34 +1,59 @@
 (ns todoapp.database
   (:require [clojure.java.io :as io]
-            [datomic.api :refer [q db] :as d]))
+            [datomic.api :as d :refer [q db]]))
 
 (def uri "datomic:mem://todos")
 
+(def functions-tx
+  [
+   {:db/ident :add-item
+    :db/id    (d/tempid :db.part/user)
+    :db/fn    (d/function
+                {:lang     :clojure
+                 :requires '[[datomic.api :as d :refer [q db]]]
+                 :params   '[db text]
+                 :code     '(let [max-index (ffirst (q '[:find (max ?i)
+                                                         :where [?e :item/index ?i]]
+                                                       db))
+                                  next-index (if max-index
+                                               (inc max-index)
+                                               0)]
+                              [{:db/id       (d/tempid :db.part/user)
+                                :item/status :item.status/todo
+                                :item/text   text
+                                :item/index  next-index}])})}
+   ])
+
 (defn init
-  []
+  [uri]
   (d/create-database uri)
   (let [conn (d/connect uri)
-        schema-tx (read-string (slurp (io/resource "db/schema.edn")))
-        data-tx (read-string (slurp (io/resource "db/data.edn")))]
+        schema-tx (read-string (slurp (io/resource "db/schema.edn")))]
     @(d/transact conn schema-tx)
-    @(d/transact conn data-tx)
-    ))
+    @(d/transact conn functions-tx)))
+
+(defn transact-dummy-data
+  [conn]
+  (let [data-tx (read-string (slurp (io/resource "db/data.edn")))]
+    (d/transact conn data-tx)))
 
 (defn add-item
-  [{:keys [connection]} {:keys [text]}]
-  (d/transact connection [{:db/id       (d/tempid :db.part/user)
-                           :item/status :item.status/todo
-                           :item/text   text
-                           ; index?
-                           }]))
+  [conn {:keys [text]}]
+  (d/transact conn [[:add-item text]]))
 
 (comment
   (d/delete-database uri)
-  (init)
+  (init uri)
   *data-readers*
   (def conn (d/connect uri))
+  @(transact-dummy-data conn)
   (q '[:find (pull ?e [*]) :where [?e :db/ident]] (db conn))
   (q '[:find (pull ?e [*]) :where [?e :item/status]] (db conn))
   (q '[:find (max ?i) :where [?e :item/index ?i]] (db conn))
-  (add-item {:connection conn} {:text "new item"})
+  @(add-item conn {:text "new item"})
+  (q '[:find ?i
+       :in $ ?text
+       :where
+       [?e :item/index ?i]
+       [?e :item/text ?text]] (db conn) "new item")
   )
