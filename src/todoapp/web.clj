@@ -3,11 +3,20 @@
             [compojure.core :refer [routes GET]]
             [datomic.api :as d :refer [db q]]
             [hiccup.page :refer [html5]]
-            [hiccup.element :refer [image]]
+            [hiccup.form :as form]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.resource :refer [wrap-resource]]
             [todoapp.database :as todo-db]))
+
+(defn todo-map->hiccup
+  [{:keys [id text status]}]
+  [:tr
+   [:td (form/check-box
+          {:disabled true}
+          (str "checkbox-" id)
+          (= :done status))]
+   [:td text]])
 
 (defn home-page
   [database]
@@ -15,11 +24,9 @@
     [:head [:title "TODO List Manager"]]
     [:body
      [:h1 "TODO List Manager"]
-     (image
-       {:width "574" :height "51"}
-       "/images/under-construction.gif"
-       "Under Construction")
-     [:pre (with-out-str (clojure.pprint/pprint (todo-db/get-items (db (:conn database)))))]]))
+     [:table
+      (map todo-map->hiccup
+           (todo-db/get-items (db (:conn database))))]]))
 
 (defn about-page
   []
@@ -28,10 +35,13 @@
     [:body
      [:h1 "About the TODO List Manager"]
      [:p "You can use this application to manage a list of things you need to get done."]
-     [:h2 "Planned Features:"]
+     [:h2 "Features:"]
      [:ul
       [:li "Displaying items"]
       [:li "Saving and restoring items"]
+      ]
+     [:h2 "Planned Features:"]
+     [:ul
       [:li "Adding new items to the list"]
       [:li "Marking items as complete"]
       [:li "Deleting items"]
