@@ -9,6 +9,7 @@
     (let [conn (d/connect uri)]
       (assoc component :conn conn)))
   (stop [component]
+    (d/release conn)
     (assoc component :conn nil)))
 
 (defn new-database [uri]
