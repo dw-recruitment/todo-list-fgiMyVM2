@@ -1,0 +1,2 @@
+{:database-uri "datomic:free://localhost:4334/todos"
+ :web-server-port 3000}

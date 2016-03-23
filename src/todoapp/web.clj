@@ -1,14 +1,16 @@
 (ns todoapp.web
-  (:require [compojure.core :refer [defroutes GET]]
+  (:require [com.stuartsierra.component :as component]
+            [compojure.core :refer [routes GET]]
+            [datomic.api :as d :refer [db q]]
             [hiccup.page :refer [html5]]
             [hiccup.element :refer [image]]
             [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.content-type :refer [wrap-content-type]]
-            [ring.middleware.resource :refer [wrap-resource]])
-  (:gen-class))
+            [ring.middleware.resource :refer [wrap-resource]]
+            [todoapp.database :as todo-db]))
 
 (defn home-page
-  []
+  [database]
   (html5
     [:head [:title "TODO List Manager"]]
     [:body
@@ -16,7 +18,8 @@
      (image
        {:width "574" :height "51"}
        "/images/under-construction.gif"
-       "Under Construction")]))
+       "Under Construction")
+     [:pre (with-out-str (clojure.pprint/pprint (todo-db/get-items (db (:conn database)))))]]))
 
 (defn about-page
   []
@@ -34,21 +37,42 @@
       [:li "Deleting items"]
       [:li "Multiple lists"]]]))
 
-(defroutes handler
-           (GET "/" [] (home-page))
-           (GET "/about" [] (about-page)))
-
-(def app
-  (-> handler
+(defn make-handler
+  "Create a handler for ring requests that has access to the
+  DatomicDatabase component `database`."
+  [database]
+  (-> (routes (GET "/" [] (home-page database))
+              (GET "/about" [] (about-page))
+              (GET "/test" [] "hello"))
       (wrap-resource "public")
       (wrap-content-type)))
 
-(defn -main
-  [& args]
-  (println "Starting server. Press ctrl+c to quit.")
-  (run-jetty #'app {:port 3000 :join? true}))
+(defn make-dynamic-handler
+  "Calls make-handler on every request so new routes
+  are available without restarting the app."
+  [database]
+  (fn [& args]
+    (apply (make-handler database) args)))
 
-(comment
-  ;; Run in repl for development
-  (defonce server (run-jetty #'app {:port 3000 :join? false}))
-  )
+(defrecord WebHandler [database handler-fn]
+  component/Lifecycle
+  (start [component]
+    (assoc component :handler-fn (make-dynamic-handler database)))
+  (stop [component]
+    (assoc component :handler-fn nil)))
+
+(defn new-web-handler
+  []
+  (map->WebHandler {}))
+
+(defrecord WebServer [web-handler port database server]
+  component/Lifecycle
+  (start [component]
+    (let [server (run-jetty (:handler-fn web-handler) {:port port :join? false})]
+      (assoc component :server server)))
+  (stop [component]
+    (.stop server)
+    (assoc component :server nil)))
+
+(defn new-web-server [port]
+  (map->WebServer {:port port}))

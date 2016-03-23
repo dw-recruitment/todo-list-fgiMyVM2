@@ -1,8 +1,18 @@
 (ns todoapp.database
-  (:require [clojure.java.io :as io]
+  (:require [com.stuartsierra.component :as component]
+            [clojure.java.io :as io]
             [datomic.api :as d :refer [q db]]))
 
-(def uri "datomic:free://localhost:4334/todos")
+(defrecord DatomicDatabase [uri conn]
+  component/Lifecycle
+  (start [component]
+    (let [conn (d/connect uri)]
+      (assoc component :conn conn)))
+  (stop [component]
+    (assoc component :conn nil)))
+
+(defn new-database [uri]
+  (map->DatomicDatabase {:uri uri}))
 
 (def functions-tx
   [
@@ -36,13 +46,13 @@
 
 (defn transact-dummy-data
   "Insert some example TODOs into the database"
-  [conn]
+  [{:keys [conn]}]
   (let [data-tx (read-string (slurp (io/resource "db/data.edn")))]
     (d/transact conn data-tx)))
 
 (defn add-item
   "Adds a new TODO item with status :todo at the end of the list."
-  [conn {:keys [text]}]
+  [{:keys [conn]} {:keys [text]}]
   (d/transact conn [[:add-item text]]))
 
 (def status-kw->enum
@@ -57,7 +67,7 @@
 
 (defn set-item-status
   "Update item with entity id e to have a status of either :todo or :done"
-  [conn e status]
+  [{:keys [conn]} e status]
   (if-let [status-enum (status-kw->enum status)]
     (d/transact conn [{:db/id       e
                        :item/status status-enum}])
@@ -68,11 +78,26 @@
   [e]
   (status-enum->kw (:item/status e)))
 
+(defn get-items
+  [db]
+  (->> (q '[:find (pull ?e [* {:item/status [:db/ident]}])
+            :where [?e :item/status]]
+          db)
+       (map first)
+       (map (fn [m]
+              {:id     (:db/id m)
+               :text   (:item/text m)
+               :status (-> m :item/status :db/ident status-enum->kw)
+               :index  (:item/index m)}))
+       (sort-by :index)))
+
 (comment
+  (def uri (:database-uri (read-string (slurp (io/resource "default-config.edn")))))
   (d/delete-database uri)
   (init uri)
-  (def conn (d/connect uri))
-  @(transact-dummy-data conn)
-  (q '[:find (pull ?e [*]) :where [?e :item/status]] (db conn))
-  @(add-item conn {:text "new item"})
+  (def database (component/start (new-database uri)))
+  @(transact-dummy-data database)
+  (q '[:find (pull ?e [* {:item/status [:db/ident]}]) :where [?e :item/status]] (db (:conn database)))
+  @(add-item database {:text "new item"})
+  (get-items (db (:conn database)))
   )
