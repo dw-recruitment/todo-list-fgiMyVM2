@@ -15,9 +15,11 @@
                                     (slurp (io/file config-path))
                                     (slurp (io/resource "default-config.edn"))))
          database (todo-db/new-database database-uri)]
-     (println (str "Installing schema to \"" database-uri "\"."))
-     (todo-db/init database-uri)
-     (println "Schema loaded.")
-     (todo-db/transact-dummy-data (component/start database))
-     (println "Dummy data loaded.")
-     (d/shutdown true))))
+     (try
+       (println (str "Installing schema to \"" database-uri "\"."))
+       (let [database (component/start database)]
+         (println "Schema loaded.")
+         (todo-db/ensure-example-data database)
+         (println "Example data loaded."))
+       (finally
+         (d/shutdown true))))))

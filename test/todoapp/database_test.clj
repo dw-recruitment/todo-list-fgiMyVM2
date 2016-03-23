@@ -8,7 +8,6 @@
 
 (defn test-fixture
   [f]
-  (todo-db/init uri)
   (f)
   (d/delete-database uri))
 
