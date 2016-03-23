@@ -75,7 +75,7 @@
   []
   (map->WebHandler {}))
 
-(defrecord WebServer [web-handler port database server]
+(defrecord WebServer [web-handler port server]
   component/Lifecycle
   (start [component]
     (let [server (run-jetty (:handler-fn web-handler) {:port port :join? false})]
@@ -86,3 +86,25 @@
 
 (defn new-web-server [port]
   (map->WebServer {:port port}))
+
+(defprotocol IGetBoundPort
+  (-get-bound-port [server]))
+
+(extend-protocol IGetBoundPort
+  org.eclipse.jetty.server.Server
+  (-get-bound-port [server]
+    (-> server .getConnectors first .getLocalPort))
+
+  WebServer
+  (-get-bound-port [web-server]
+    (when-let [server (:server web-server)]
+      (-get-bound-port server))))
+
+(defn get-bound-port
+  "Get the local port a running Jetty server is bound to.
+  Call on a WebServer component to get the port of its :server.
+  Note that this could be different than the WebServer :port
+  specified in configuration (if :port is 0, the local port
+  will be automatically assigned)."
+  [server]
+  (-get-bound-port server))

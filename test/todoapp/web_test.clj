@@ -11,12 +11,7 @@
                    (app/todo-system
                      {:web-server-port 0
                       :database-uri    "datomic:mem://todos-test"}))
-          port (-> system
-                   :web-server
-                   :server
-                   (.getConnectors)
-                   first
-                   (.getLocalPort))
+          port (web/get-bound-port (:web-server system))
           response (client/get (str "http://localhost:" port))]
       (is (= 200 (:status response)))
       (component/stop system))))
