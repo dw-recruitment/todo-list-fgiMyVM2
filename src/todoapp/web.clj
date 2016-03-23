@@ -80,10 +80,10 @@
      [:ul
       [:li "Displaying items"]
       [:li "Saving and restoring items"]
-      [:li "Adding new items to the list"]]
+      [:li "Adding new items to the list"]
+      [:li "Marking items as complete"]]
      [:h2 "Planned Features:"]
      [:ul
-      [:li "Marking items as complete"]
       [:li "Deleting items"]
       [:li "Multiple lists"]]]))
 
