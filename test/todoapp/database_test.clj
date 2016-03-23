@@ -31,7 +31,8 @@
     (testing "New item has status :todo"
       (is (= :todo (todo-db/status (d/entity db-after eid)))))
     (testing "After status change item has status :done"
-      (let [{:keys [db-after]} @(todo-db/set-item-status database eid :done)]
+      (let [{:keys [db-after]} @(todo-db/set-item-status database {:id eid
+                                                                   :status :done})]
         (is (= :done (todo-db/status (d/entity db-after eid))))))))
 
 (comment

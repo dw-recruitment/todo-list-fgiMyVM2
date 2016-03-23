@@ -2,7 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [compojure.core :refer [routes GET POST]]
             [datomic.api :as d :refer [db q]]
-            [hiccup.page :refer [html5]]
+            [hiccup.page :refer [html5 include-css]]
             [hiccup.form :as form]
             [hiccup.util :refer [escape-html]]
             [ring.adapter.jetty :refer [run-jetty]]
@@ -15,28 +15,42 @@
 (defn item-map->hiccup
   [{:keys [id text status]}]
   [:tr
-   [:td (form/check-box
-          {:disabled true}
-          (str "checkbox-" id)
-          (= :done status))]
-   [:td (escape-html text)]])
+   [:td {:class (when (= :done status)
+                  "item-text--completed")}
+    (escape-html text)]
+   [:td
+    (form/form-to [:post "/update-item"]
+                  [:input {:type "hidden"
+                           :name "item-id"
+                           :value (escape-html id)}]
+                  [:input {:type "hidden"
+                           :name "item-status"
+                           ;; Opposite of current value since this value is for an update
+                           :value (if (= :done status)
+                                    "todo"
+                                    "done")}]
+                  [:button {:type "submit"}
+                   (if (= :done status)
+                     "undo"
+                     "complete")])]])
 
 (defn home-page
   [database]
   (html5
-    [:head [:title "TODO List Manager"]]
+    [:head [:title "TODO List Manager"]
+     (include-css "/styles.css")]
     [:body
      [:h1 "TODO List Manager"]
      [:table
       (map item-map->hiccup
            (todo-db/get-items (db (:conn database))))
       [:tr
-       [:td]
-       [:td (form/form-to [:post "/"]
-                          [:input {:name "new-item-text"}]
+       [:td (form/form-to [:post "/new-item"]
+                          [:input {:name "item-text"}]
                           " "
                           [:button {:type "submit"}
-                           "Add New Item"])]]]]))
+                           "Add New Item"])]
+       [:td]]]]))
 
 (defn post-new-item
   [database item-text]
@@ -46,6 +60,14 @@
   ;; some coordination might be needed to make sure client sees the most
   ;; recent items.
   (response/redirect "/" :see-other))
+
+(defn post-update-item
+  [database {:strs [item-id item-status]}]
+  (let [item (cond-> {}
+                     item-id (assoc :id (Long/parseLong item-id))
+                     item-status (assoc :status (keyword item-status)))]
+    @(todo-db/set-item-status database item)
+    (response/redirect "/" :see-other)))
 
 (defn about-page
   []
@@ -70,7 +92,10 @@
   DatomicDatabase component `database`."
   [database]
   (-> (routes (GET "/" [] (home-page database))
-              (POST "/" [new-item-text] (post-new-item database new-item-text))
+              (POST "/new-item" [item-text] (post-new-item database item-text))
+              (POST "/update-item" {params :params}
+                    (post-update-item database (select-keys params ["item-id"
+                                                                    "item-status"])))
               (GET "/about" [] (about-page))
               (GET "/test" [] "hello"))
       (wrap-resource "public")

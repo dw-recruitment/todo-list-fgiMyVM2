@@ -71,29 +71,39 @@
    :item.status/done :done})
 
 (defn set-item-status
-  "Update item with entity id e to have a status of either :todo or :done"
-  [{:keys [conn]} e status]
+  "Update item with new status.
+  (set-item-status database item)
+
+  database - DatomicDatabase component
+  item - map with the following keys
+    :id - entity id in the database
+    :status - either :todo or :done"
+  [{:keys [conn]} {:keys [id status]}]
   (if-let [status-enum (status-kw->enum status)]
-    (d/transact conn [{:db/id       e
+    (d/transact conn [{:db/id       id
                        :item/status status-enum}])
-    (throw (ex-info "Status must be either :todo or :done" {:status status}))))
+    (throw (ex-info (str "Status must be either :todo or :done, got " (pr-str status)) {:status status}))))
 
 (defn status
   "Get status of entity e"
   [e]
   (status-enum->kw (:item/status e)))
 
+(defn eid->item
+  [db-val eid]
+  (let [pulled-map (d/pull db-val '[* {:item/status [:db/ident]}] eid)]
+    {:id     (:db/id pulled-map)
+     :text   (:item/text pulled-map)
+     :status (-> pulled-map :item/status :db/ident status-enum->kw)
+     :index  (:item/index pulled-map)}))
+
 (defn get-items
-  [db]
-  (->> (q '[:find (pull ?e [* {:item/status [:db/ident]}])
+  [db-val]
+  (->> (q '[:find ?e
             :where [?e :item/status]]
-          db)
+          db-val)
        (map first)
-       (map (fn [m]
-              {:id     (:db/id m)
-               :text   (:item/text m)
-               :status (-> m :item/status :db/ident status-enum->kw)
-               :index  (:item/index m)}))
+       (map (partial eid->item db-val))
        (sort-by :index)))
 
 (comment
@@ -104,5 +114,6 @@
   @(ensure-example-data database)
   (q '[:find (pull ?e [* {:item/status [:db/ident]}]) :where [?e :item/status]] (db (:conn database)))
   @(add-item database {:text "new item"})
-  (get-items (db (:conn database)))
+  (clojure.pprint/print-table [:id :text :status :index]
+                              (get-items (db (:conn database))))
   )
