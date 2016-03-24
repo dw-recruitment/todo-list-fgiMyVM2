@@ -19,14 +19,14 @@
 
 (defn stop-system
       []
-      (alter-var-root #'system component/stop))
+      (alter-var-root #'system (fn [s] (component/stop s) nil)))
 
 (defn go
   []
   (new-system (edn/read-string (slurp (io/resource "default-config.edn"))))
   (start-system))
 
-(defn reset
+(defn restart
   []
   (stop-system)
   (refresh :after 'user/go))
@@ -34,7 +34,7 @@
 (comment
   (go)
   system
-  (reset)
+  (restart)
   (stop-system)
 
   (def uri (:database-uri (read-string (slurp (io/resource "default-config.edn")))))

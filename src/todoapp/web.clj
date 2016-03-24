@@ -96,10 +96,10 @@
       [:li "Displaying items"]
       [:li "Saving and restoring items"]
       [:li "Adding new items to the list"]
-      [:li "Marking items as complete"]]
+      [:li "Marking items as complete"]
+      [:li "Deleting items"]]
      [:h2 "Planned Features:"]
      [:ul
-      [:li "Deleting items"]
       [:li "Multiple lists"]]]))
 
 (defn make-handler
