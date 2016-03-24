@@ -9,6 +9,7 @@
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.resource :refer [wrap-resource]]
+            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [ring.util.response :as response]
             [todoapp.database :as todo-db]))
 
@@ -29,10 +30,18 @@
                            :value (if (= :done status)
                                     "todo"
                                     "done")}]
-                  [:button {:type "submit"}
+                  [:button {:type "submit"
+                            :class "item-completion-button"}
                    (if (= :done status)
-                     "undo"
-                     "complete")])]])
+                     "Undo"
+                     "Complete")])]
+   [:td
+    (form/form-to [:post "/delete-item"]
+                  [:input {:type "hidden"
+                           :name "item-id"
+                           :value (escape-html id)}]
+                  [:button {:type "submit"}
+                   "Delete"])]])
 
 (defn home-page
   [database]
@@ -45,12 +54,12 @@
       (map item-map->hiccup
            (todo-db/get-items (db (:conn database))))
       [:tr
-       [:td (form/form-to [:post "/new-item"]
+       [:td {:colspan 3}
+        (form/form-to [:post "/new-item"]
                           [:input {:name "item-text"}]
                           " "
                           [:button {:type "submit"}
-                           "Add New Item"])]
-       [:td]]]]))
+                           "Add New Item"])]]]]))
 
 (defn post-new-item
   [database item-text]
@@ -68,6 +77,12 @@
                      item-status (assoc :status (keyword item-status)))]
     @(todo-db/set-item-status database item)
     (response/redirect "/" :see-other)))
+
+(defn post-delete-item
+  [database item-id]
+  (let [id (Long/parseLong item-id)]
+    (todo-db/retract-item database id))
+  (response/redirect "/" :see-other))
 
 (defn about-page
   []
@@ -96,11 +111,14 @@
               (POST "/update-item" {params :params}
                     (post-update-item database (select-keys params ["item-id"
                                                                     "item-status"])))
+              (POST "/delete-item" [item-id]
+                    (post-delete-item database item-id))
               (GET "/about" [] (about-page))
               (GET "/test" [] "hello"))
       (wrap-resource "public")
       (wrap-content-type)
-      (wrap-params)))
+      (wrap-params)
+      (wrap-stacktrace)))
 
 (defn make-dynamic-handler
   "Calls make-handler on every request so new routes

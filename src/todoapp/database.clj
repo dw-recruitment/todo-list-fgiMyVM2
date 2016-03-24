@@ -90,9 +90,22 @@
   (status-enum->kw (:item/status e)))
 
 (defn eid->item
+  "Return a map describing an item based on its entity ID,
+  or nil if not found.
+
+  db-val - a Datomic database value
+  eid - Entity ID of an item to look up
+
+  Returned map keys:
+    :id - Entity ID
+    :text - Text of the item
+    :status - :todo or :done
+    :index - 0-based position in the list of items"
   [db-val eid]
-  (let [pulled-map (d/pull db-val '[* {:item/status [:db/ident]}] eid)]
-    {:id     (:db/id pulled-map)
+  (when-let [pulled-map (d/pull db-val
+                                '[:item/text {:item/status [:db/ident]} :item/index]
+                                eid)]
+    {:id     eid
      :text   (:item/text pulled-map)
      :status (-> pulled-map :item/status :db/ident status-enum->kw)
      :index  (:item/index pulled-map)}))
@@ -106,6 +119,10 @@
        (map (partial eid->item db-val))
        (sort-by :index)))
 
+(defn retract-item
+  [{:keys [conn]} id]
+  @(d/transact conn [[:db.fn/retractEntity id]]))
+
 (comment
   (def uri (:database-uri (read-string (slurp (io/resource "default-config.edn")))))
   (d/delete-database uri)
@@ -116,4 +133,9 @@
   @(add-item database {:text "new item"})
   (clojure.pprint/print-table [:id :text :status :index]
                               (get-items (db (:conn database))))
+  (eid->item (db (:conn database)) 5000)
+  (let [query '[:item/text {:item/status [:db/ident]} :item/index]]
+    [(d/pull (db (:conn database)) query 17592186045561)
+     (d/pull (db (:conn database)) query 17592186045443)])
+
   )
