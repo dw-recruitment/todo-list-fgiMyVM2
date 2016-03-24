@@ -49,16 +49,32 @@
   (map->DatomicDatabase {:uri uri}))
 
 (defn ensure-example-data
-  "Insert some example TODOs into the database.
-  Uses conformity to only insert them once."
+  "Insert some example items into the database.
+  If run multiple times, will only do the insert once."
   [{:keys [conn]}]
   (let [data-norms (conformity/read-resource "db/data.edn")]
     (conformity/ensure-conforms conn data-norms [:todoapp/example-data])))
 
 (defn add-item
-  "Adds a new TODO item with status :todo at the end of the list."
+  "Adds a new TODO item with status :todo at the end of the list.
+
+  (add-item database item)
+
+  database - DatomicDatabase component
+  item - map with keys:
+    :text - text content of the new item
+
+  Returns a map with keys:
+    :db-before - as from datomic.api/transact
+    :db-after - as from datomic.api/transact
+    :tx-data - as from datomic.api/transact
+    :item-id - the entity id of the newly inserted item"
   [{:keys [conn]} {:keys [text]}]
-  (d/transact conn [[:add-item text]]))
+  (let [{:keys [db-before db-after tx-data tempids]} @(d/transact conn [[:add-item text]])]
+    {:db-before db-before
+     :db-after db-after
+     :tx-data tx-data
+     :item-id (val (first tempids))}))
 
 (def status-kw->enum
   "Helper for going from :todo :done keywords to the keywords used to enumerate statuses in the db"
@@ -80,8 +96,8 @@
     :status - either :todo or :done"
   [{:keys [conn]} {:keys [id status]}]
   (if-let [status-enum (status-kw->enum status)]
-    (d/transact conn [{:db/id       id
-                       :item/status status-enum}])
+    @(d/transact conn [{:db/id       id
+                        :item/status status-enum}])
     (throw (ex-info (str "Status must be either :todo or :done, got " (pr-str status)) {:status status}))))
 
 (defn status
@@ -122,20 +138,3 @@
 (defn retract-item
   [{:keys [conn]} id]
   @(d/transact conn [[:db.fn/retractEntity id]]))
-
-(comment
-  (def uri (:database-uri (read-string (slurp (io/resource "default-config.edn")))))
-  (d/delete-database uri)
-  (init uri)
-  (def database (component/start (new-database uri)))
-  @(ensure-example-data database)
-  (q '[:find (pull ?e [* {:item/status [:db/ident]}]) :where [?e :item/status]] (db (:conn database)))
-  @(add-item database {:text "new item"})
-  (clojure.pprint/print-table [:id :text :status :index]
-                              (get-items (db (:conn database))))
-  (eid->item (db (:conn database)) 5000)
-  (let [query '[:item/text {:item/status [:db/ident]} :item/index]]
-    [(d/pull (db (:conn database)) query 17592186045561)
-     (d/pull (db (:conn database)) query 17592186045443)])
-
-  )

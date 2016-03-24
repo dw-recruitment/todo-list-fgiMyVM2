@@ -10,6 +10,9 @@
                  [io.rkn/conformity "0.4.0"]
                  [ring "1.4.0"]]
   :main ^:skip-aot todoapp.main
+  :repl-options {:init-ns user}
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
-             :dev {:dependencies [[clj-http "2.1.0"]]}})
+             :dev {:source-paths ["dev"]
+                   :dependencies [[org.clojure/tools.namespace "0.2.11"]
+                                  [clj-http "2.1.0"]]}})

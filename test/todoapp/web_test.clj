@@ -43,33 +43,31 @@
 
 (deftest complete-item-test
   (testing "Item is complete in the database after update"
-    (let [{:keys [db-after tempids]} @(todo-db/add-item (:database system)
-                                                        {:text "Do something fun"})
-          id (val (first tempids))
+    (let [{:keys [db-after item-id]} (todo-db/add-item (:database system)
+                                                       {:text "Do something fun"})
           port (web/get-bound-port (:web-server system))
           response (client/post (str "http://localhost:" port "/update-item")
-                                {:form-params      {:item-id     id
+                                {:form-params      {:item-id     item-id
                                                     :item-status "done"}
                                  :throw-exceptions false})]
       (is (= 200 (:status response)))
       ;; After adding item but before POST
-      (is (= :todo (:status (todo-db/eid->item db-after id))))
+      (is (= :todo (:status (todo-db/eid->item db-after item-id))))
       ;; Latest database state, after POST
-      (is (= :done (:status (todo-db/eid->item (-> system :database :conn db) id)))))))
+      (is (= :done (:status (todo-db/eid->item (-> system :database :conn db) item-id)))))))
 
 (deftest delete-item-test
   (testing
-    (let [{:keys [db-after tempids]} @(todo-db/add-item (:database system)
-                                                        {:text "Do something fun"})
-          id (val (first tempids))
+    (let [{:keys [db-after item-id]} (todo-db/add-item (:database system)
+                                                       {:text "Do something fun"})
           port (web/get-bound-port (:web-server system))
           response (client/post (str "http://localhost:" port "/delete-item")
-                                {:form-params      {:item-id id}
+                                {:form-params      {:item-id item-id}
                                  :throw-exceptions false})]
       ;; After adding item but before POST
-      (is (todo-db/eid->item db-after id))
+      (is (todo-db/eid->item db-after item-id))
       ;; Latest database state, after POST
-      (is (not (todo-db/eid->item (-> system :database :conn db) id)))
+      (is (not (todo-db/eid->item (-> system :database :conn db) item-id)))
       (component/stop system))))
 
 (comment

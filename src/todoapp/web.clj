@@ -63,7 +63,7 @@
 
 (defn post-new-item
   [database item-text]
-  @(todo-db/add-item database {:text item-text})
+  (todo-db/add-item database {:text item-text})
   ;; Redirects so user can refresh the page without resending POST data.
   ;; If this app is ever deployed on multiple load-balanced servers,
   ;; some coordination might be needed to make sure client sees the most
@@ -75,7 +75,7 @@
   (let [item (cond-> {}
                      item-id (assoc :id (Long/parseLong item-id))
                      item-status (assoc :status (keyword item-status)))]
-    @(todo-db/set-item-status database item)
+    (todo-db/set-item-status database item)
     (response/redirect "/" :see-other)))
 
 (defn post-delete-item
