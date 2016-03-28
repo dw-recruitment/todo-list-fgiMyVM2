@@ -1,4 +1,4 @@
-(defproject todoapp "0.1.0-SNAPSHOT"
+(defproject todoapp "0.2.0-SNAPSHOT"
   :description "TODO Application for Democracy Works"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -14,5 +14,6 @@
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev"]
-                   :dependencies [[org.clojure/tools.namespace "0.2.11"]
+                   :dependencies [[org.clojure/test.check "0.9.0"]
+                                  [org.clojure/tools.namespace "0.2.11"]
                                   [clj-http "2.1.0"]]}})

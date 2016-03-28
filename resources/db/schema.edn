@@ -27,4 +27,36 @@
 
     {:db/id    #db/id[:db.part/user]
      :db/ident :item.status/done
-     :db/doc   "Value of :item/status attribute indicating a TODO is done"}]]}}
+     :db/doc   "Value of :item/status attribute indicating a TODO is done"}]]}
+
+ :todoapp/list-schema
+ {:txes
+  [[{:db/id                 #db/id[:db.part/db]
+     :db/ident              :list/name
+     :db/valueType          :db.type/string
+     :db/cardinality        :db.cardinality/one
+     :db/doc                "The name of a TODO list"
+     :db.install/_attribute :db.part/db}
+
+    {:db/id                 #db/id[:db.part/db]
+     :db/ident              :list/items
+     :db/isComponent        true
+     :db/valueType          :db.type/ref
+     :db/cardinality        :db.cardinality/many
+     :db/doc                "All the items in a given TODO list"
+     :db.install/_attribute :db.part/db}
+
+    {:db/id          #db/id[:db.part/db]
+     :db/ident       :list/default?
+     :db/valueType   :db.type/boolean
+     :db/unique      :db.unique/identity
+     :db/cardinality :db.cardinality/one
+     :db/doc "Optional attribute meant for one list. The list which has :list/default?
+     set to true should not be deleted and items with no list should be migrated to it."
+     :db.install/_attribute :db.part/db}]
+
+   [{:db/id     #db/id[:db.part/user]
+     :list/name "Default List"
+     :list/default? true
+     :db/doc    "Default list for old data entries that had no list or for users who
+     do not want to manage multiple lists."}]]}}

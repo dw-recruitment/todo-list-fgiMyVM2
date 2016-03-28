@@ -1,7 +1,56 @@
-.item-text--completed {
+/*
+UUCSS
+https://github.com/oakmac/snowflake-css/blob/master/00-scrap/notes.md
+*/
+
+.show-hover-2110d:hover {
+  background-color: #F5F3EE;
+}
+
+.default-content-322be:empty::after {
+  content: "[Unnamed]";
+}
+
+.item-text-completed-f96ab {
   text-decoration: line-through;
 }
 
-.item-completion-button {
+.horizontal-fill-1d2e3 {
   width: 100%;
+}
+
+.item-table-388e6 {
+  display: table;
+  max-width: 800px;
+  width: 100%;
+}
+
+.update-form-f72f0 {
+  vertical-align: middle;
+}
+
+.delete-form-baf1a {
+  vertical-align: middle;
+}
+
+.item-row-fc564 {
+  display: table-row;
+  border: 1px solid black;
+}
+
+.item-cell-d4622 {
+  display: table-cell;
+  padding: 5px;
+}
+
+.item-cell-two-col-589dc {
+  width: 30%;
+}
+
+.item-cell-one-col-1c259 {
+  width: 15%;
+}
+
+.footer-297dc {
+  padding: 20px 5px;
 }

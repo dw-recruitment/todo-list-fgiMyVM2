@@ -1,20 +1,21 @@
 {:todoapp/example-data
- {:txes [[{:db/id       #db/id[:db.part/user]
-           :item/index  0
-           :item/status :item.status/todo
-           :item/text   "Write TODO app"}
+ {:txes [[{:db/id      [:list/default? true]
+           :list/items [{:db/id       #db/id[:db.part/user]
+                         :item/index  0
+                         :item/status :item.status/done
+                         :item/text   "Visit a museum"}
 
-          {:db/id       #db/id[:db.part/user]
-           :item/index  1
-           :item/status :item.status/todo
-           :item/text   "Add bonus features"}
+                        {:db/id       #db/id[:db.part/user]
+                         :item/index  1
+                         :item/status :item.status/done
+                         :item/text   "Go to a nice restaurant"}
 
-          {:db/id       #db/id[:db.part/user]
-           :item/index  2
-           :item/status :item.status/done
-           :item/text   "Create DB schema"}
+                        {:db/id       #db/id[:db.part/user]
+                         :item/index  2
+                         :item/status :item.status/todo
+                         :item/text   "Take a vacation"}
 
-          {:db/id       #db/id[:db.part/user]
-           :item/index  3
-           :item/status :item.status/done
-           :item/text   "Insert example data into DB"}]]}}
+                        {:db/id       #db/id[:db.part/user]
+                         :item/index  3
+                         :item/status :item.status/todo
+                         :item/text   "See the world"}]}]]}}
