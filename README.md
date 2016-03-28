@@ -1,6 +1,6 @@
 # TODO List Manager
 
-Manage a list of TODO items!
+Manage lists of TODO items!
 
 ## Installation
 

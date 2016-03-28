@@ -206,16 +206,14 @@
     [:head [:title "About the TODO List Manager"]]
     [:body
      [:h1 "About the TODO List Manager"]
-     [:p "You can use this application to manage a list of things you need to get done."]
+     [:p "You can use this application to manage lists of things you need to get done."]
      [:h2 "Features:"]
      [:ul
       [:li "Displaying items"]
       [:li "Saving and restoring items"]
       [:li "Adding new items to the list"]
       [:li "Marking items as complete"]
-      [:li "Deleting items"]]
-     [:h2 "Planned Features:"]
-     [:ul
+      [:li "Deleting items"]
       [:li "Multiple lists"]]]))
 
 (defn make-handler
